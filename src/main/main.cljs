@@ -1,5 +1,5 @@
 (ns main.main
-  (:require ["electron" :refer [app BrowserWindow crashReporter]]
+  (:require ["electron" :refer [app BrowserWindow crashReporter ipcMain ]]
             [cljs.core.async :refer (chan put! <! >! go go-loop timeout)]
             [cljs-http.client :as http]
             [ajax.core :refer [GET POST]]
@@ -27,7 +27,11 @@
 
 (defn extract-token [url]
   (second  (re-matches #".*token=([0-9a-f]+).*" url)))
-  
+
+
+(.on ipcMain "get-token"
+     #(.reply %1 "token" @token)
+     )
 
 (defn get-token [url]
   (let  [code (extract-code url)
@@ -48,27 +52,27 @@
 
 
 (defn init-browser []
-  (reset! auth-window (BrowserWindow.
-                       (clj->js {:width 1200
-                                 :height 1200
-                                 :webPreferences {:nodeIntegration true}
-                                 ;;"node-integration" false
-                                 ;;"web-security" false
-                                 })))
+(reset! auth-window (BrowserWindow.
+                     (clj->js {:width 1200
+                               :height 1200
+                               :webPreferences {:nodeIntegration true}
+                               ;;"node-integration" false
+                               ;;"web-security" false
+                               })))
 
-  ;;(.show @auth-window)
-  (.catch (.loadURL @auth-window auth-url)
-          (fn [x]
-            (prn (get-token (.toString  (js->clj x))))
-            ;;(.log js/console  x))
-            ))
-  
-  ;;(.webContents.on @auth-window "did-fail-load" #(.log js/console (.sender.history %)))
-  (.on @auth-window "load" #(prn %1))
-  (.on @auth-window "closed" #(reset! main-window nil))
-  (.webContents.on @auth-window  "will-navigate" #(do
-                                                    (prn  %1 %2  )
-                                                    ( get-token %2))))
+;;(.show @auth-window)
+(.catch (.loadURL @auth-window auth-url)
+        (fn [x]
+          (prn (get-token (.toString  (js->clj x))))
+          ;;(.log js/console  x))
+          ))
+
+;;(.webContents.on @auth-window "did-fail-load" #(.log js/console (.sender.history %)))
+(.on @auth-window "load" #(prn %1))
+(.on @auth-window "closed" #(reset! main-window nil))
+(.webContents.on @auth-window  "will-navigate" #(do
+                                                  (prn  %1 %2  )
+                                                  ( get-token %2))))
 
 ;; webView.getSettings().setJavaScriptEnabled(true);
 ;; authWindow.webContents.on('will-navigate', function (event, newUrl) {
@@ -76,11 +80,11 @@
 (defn main []
                                         ; CrashReporter can just be omitted
 (.start crashReporter
-(clj->js
- {:companyName "MyAwesomeCompany"
-  :productName "MyAwesomeApp"
-  :submitURL "https://example.com/submit-url"
-  :autoSubmit false}))
+        (clj->js
+         {:companyName "MyAwesomeCompany"
+          :productName "MyAwesomeApp"
+          :submitURL "https://example.com/submit-url"
+          :autoSubmit false}))
 
 (.on app "window-all-closed" #(when-not (= js/process.platform "darwin")
                                 (.quit app)))

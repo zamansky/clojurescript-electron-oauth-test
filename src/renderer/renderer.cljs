@@ -18,12 +18,11 @@
 
 
 (defn start! []
-;; (.on ipcRenderer "token" #(reset! token %))
-;; (prn "SENDING")
-;; (.send ipcRenderer "get-token" "")
-(reagent/render
- [root-component]
- (js/document.getElementById "app-container")))
+  (.on ipcRenderer "token" #(reset! token (js->clj %2)))
+  (.send ipcRenderer "get-token" "")
+  (reagent/render
+   [root-component]
+   (js/document.getElementById "app-container")))
 
 (start!)
 
