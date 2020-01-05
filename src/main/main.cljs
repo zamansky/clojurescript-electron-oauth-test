@@ -7,7 +7,7 @@
 
 (def main-window (atom nil))
 (def auth-window (atom nil))
-
+(def token (atom ""))
 (def auth-url "https://github.com/login/oauth/authorize?client_id=3056f749c2e91ce4d780&scope=admin:org delete_repo")
 
 (def id "3056f749c2e91ce4d780")
@@ -25,20 +25,21 @@
   (second  (re-matches #".*code=([0-9a-f]+).*" url))
   )
 
+(defn extract-token [url]
+  (second  (re-matches #".*token=([0-9a-f]+).*" url)))
+  
+
 (defn get-token [url]
   (let  [code (extract-code url)
          url "https://github.com/login/oauth/access_token"
          ]
-    (prn " code "code)
-    (prn " url "url)
     (go (let [response
               (<! (http/get url {:query-params {"client_id" id "client_secret" secret "code" code }
                                  :headers {"Accept" "application/json"}
                                  }))
               ]
-          ;;       (prn "HELLO")
-          (prn (str (keys response)) )
-          (prn  "THE RESPONSE: " (:body response))
+          (reset! token (extract-token (:body response)))
+          (prn @token)
           (.loadURL @auth-window (str "file://" js/__dirname "/public/index.html"))
           ;;(GET url {:params {:client_id id :client_secret secret :code code}
           ;;          :handler handler
@@ -50,6 +51,7 @@
   (reset! auth-window (BrowserWindow.
                        (clj->js {:width 1200
                                  :height 1200
+                                 :webPreferences {:nodeIntegration true}
                                  ;;"node-integration" false
                                  ;;"web-security" false
                                  })))
