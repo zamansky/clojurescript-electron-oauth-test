@@ -28,7 +28,7 @@
       "require": "^2.4.20",
       "scheduler": "^0.18.0",
       "tailwindcss": "^1.1.4",
-      "ws": "^7.2.1",
+      "ws": "^7.4.6",
       "xmlhttprequest": "^1.8.0"
    }
 }
